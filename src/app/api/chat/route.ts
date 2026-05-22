@@ -25,10 +25,6 @@ Always remember:
 - Sleep and stress management are crucial for results
 - Consistency beats perfection every time`;
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(req: NextRequest) {
   if (!process.env.OPENAI_API_KEY) {
     return new Response(
@@ -36,6 +32,10 @@ export async function POST(req: NextRequest) {
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
+
+  const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
 
   const { messages, context } = await req.json();
 
