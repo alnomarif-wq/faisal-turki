@@ -3,6 +3,17 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 
+export const metadata: Metadata = {
+  title: 'FitAI Pro – AI-Powered Fitness & Nutrition',
+  description: 'Your premium AI-powered personal trainer and nutrition coach. Science-based workout plans, personalized meal plans, and 24/7 AI coaching.',
+  keywords: 'fitness, AI trainer, nutrition, workout plan, meal plan, bodybuilding, fat loss',
+  openGraph: {
+    title: 'FitAI Pro – AI-Powered Fitness & Nutrition',
+    description: 'Science-based personalized fitness & nutrition powered by AI.',
+    type: 'website',
+  },
+};
+
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
@@ -16,13 +27,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#0A0A0F" />
-        <title>FitAI Pro – AI-Powered Fitness & Nutrition</title>
-        <meta name="description" content="Your premium AI-powered personal trainer and nutrition coach. Science-based workout plans, personalized meal plans, and 24/7 AI coaching." />
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
-      </head>
       <body className="bg-dark-900 text-white antialiased">
         {children}
         <Toaster

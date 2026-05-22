@@ -156,3 +156,18 @@ input[type='range']::-webkit-slider-thumb {
 button, a {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Scrollbar hide utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Font weight for display */
+.font-display {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 800;
+}
