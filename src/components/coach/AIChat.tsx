@@ -98,7 +98,7 @@ Goal calories: ${calorieData?.goalCalories} kcal. Protein: ${macroData?.protein}
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "I'm having trouble connecting right now. Make sure your OpenAI API key is configured. In the meantime, here's what I know: focus on progressive overload, hit your protein target, and get adequate sleep. Those three factors drive 80% of results.",
+        content: "I'm having trouble connecting right now. Make sure your ANTHROPIC_API_KEY is added in Vercel → Project Settings → Environment Variables. In the meantime, here's what I know: focus on progressive overload, hit your protein target, and get adequate sleep. Those three factors drive 80% of results.",
         timestamp: new Date(),
       };
       addChatMessage(errorMsg);
