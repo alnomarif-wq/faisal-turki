@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 
 const SYSTEM_PROMPT = `You are an elite AI fitness and nutrition coach with deep expertise in:
 - Evidence-based hypertrophy and strength training
@@ -26,15 +26,15 @@ Always remember:
 - Consistency beats perfection every time`;
 
 export async function POST(req: NextRequest) {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.ANTHROPIC_API_KEY) {
     return new Response(
-      JSON.stringify({ error: 'OpenAI API key not configured. Add OPENAI_API_KEY to your .env.local file.' }),
+      JSON.stringify({ error: 'Anthropic API key not configured. Add ANTHROPIC_API_KEY to your .env.local file.' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 
-  const client = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+  const client = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
   });
 
   const { messages, context } = await req.json();
@@ -43,15 +43,14 @@ export async function POST(req: NextRequest) {
     ? `${SYSTEM_PROMPT}\n\nUser's current plan data:\n${context}`
     : SYSTEM_PROMPT;
 
-  const stream = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      { role: 'system', content: systemMessage },
-      ...messages,
-    ],
-    stream: true,
-    max_tokens: 500,
-    temperature: 0.7,
+  const stream = await client.messages.stream({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1024,
+    system: systemMessage,
+    messages: messages.map((m: { role: string; content: string }) => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    })),
   });
 
   const encoder = new TextEncoder();
@@ -59,8 +58,15 @@ export async function POST(req: NextRequest) {
   const readable = new ReadableStream({
     async start(controller) {
       for await (const chunk of stream) {
-        const data = JSON.stringify(chunk);
-        controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+        if (
+          chunk.type === 'content_block_delta' &&
+          chunk.delta.type === 'text_delta'
+        ) {
+          const data = JSON.stringify({
+            choices: [{ delta: { content: chunk.delta.text } }],
+          });
+          controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+        }
       }
       controller.enqueue(encoder.encode('data: [DONE]\n\n'));
       controller.close();

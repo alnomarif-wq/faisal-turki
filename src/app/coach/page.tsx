@@ -46,8 +46,8 @@ export default function CoachPage() {
           <div className="mt-3 flex items-center gap-2 p-3 rounded-xl bg-dark-800 border border-white/5">
             <Zap className="w-3.5 h-3.5 text-gold-400 flex-shrink-0" />
             <p className="text-xs text-dark-400">
-              Powered by GPT-4o mini. Responses are personalized to your profile and goals.
-              Requires OPENAI_API_KEY in .env.local to activate.
+              Powered by Claude (Anthropic). Responses are personalized to your profile and goals.
+              Requires ANTHROPIC_API_KEY in .env.local to activate.
             </p>
           </div>
         </motion.div>
