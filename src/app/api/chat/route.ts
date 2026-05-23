@@ -28,7 +28,7 @@ Always remember:
 export async function POST(req: NextRequest) {
   if (!process.env.ANTHROPIC_API_KEY) {
     return new Response(
-      JSON.stringify({ error: 'Anthropic API key not configured. Add ANTHROPIC_API_KEY to your .env.local file.' }),
+      JSON.stringify({ error: 'NO_KEY', message: 'ANTHROPIC_API_KEY is missing in environment variables.' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
@@ -37,47 +37,73 @@ export async function POST(req: NextRequest) {
     apiKey: process.env.ANTHROPIC_API_KEY,
   });
 
-  const { messages, context } = await req.json();
+  let body: { messages: { role: string; content: string }[]; context?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(
+      JSON.stringify({ error: 'INVALID_JSON', message: 'Invalid request body.' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const { messages, context } = body;
 
   const systemMessage = context
     ? `${SYSTEM_PROMPT}\n\nUser's current plan data:\n${context}`
     : SYSTEM_PROMPT;
 
-  const stream = await client.messages.stream({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1024,
-    system: systemMessage,
-    messages: messages.map((m: { role: string; content: string }) => ({
-      role: m.role as 'user' | 'assistant',
-      content: m.content,
-    })),
-  });
-
   const encoder = new TextEncoder();
 
-  const readable = new ReadableStream({
-    async start(controller) {
-      for await (const chunk of stream) {
-        if (
-          chunk.type === 'content_block_delta' &&
-          chunk.delta.type === 'text_delta'
-        ) {
-          const data = JSON.stringify({
-            choices: [{ delta: { content: chunk.delta.text } }],
-          });
-          controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-        }
-      }
-      controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-      controller.close();
-    },
-  });
+  try {
+    const stream = await client.messages.stream({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      system: systemMessage,
+      messages: messages.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      })),
+    });
 
-  return new Response(readable, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  });
+    const readable = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of stream) {
+            if (
+              chunk.type === 'content_block_delta' &&
+              chunk.delta.type === 'text_delta'
+            ) {
+              const data = JSON.stringify({
+                choices: [{ delta: { content: chunk.delta.text } }],
+              });
+              controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+            }
+          }
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
+        } catch (streamErr) {
+          const errMsg = streamErr instanceof Error ? streamErr.message : 'Stream error';
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ error: errMsg })}\n\n`)
+          );
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(readable, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return new Response(
+      JSON.stringify({ error: 'API_ERROR', message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
 }

@@ -59,7 +59,10 @@ Goal calories: ${calorieData?.goalCalories} kcal. Protein: ${macroData?.protein}
         }),
       });
 
-      if (!response.ok) throw new Error('API error');
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'API error');
+      }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -93,12 +96,13 @@ Goal calories: ${calorieData?.goalCalories} kcal. Protein: ${macroData?.protein}
           }
         }
       }
-    } catch {
+    } catch (err) {
       setLoading(false);
+      const errMessage = err instanceof Error ? err.message : 'Unknown error';
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "I'm having trouble connecting right now. Make sure your ANTHROPIC_API_KEY is added in Vercel → Project Settings → Environment Variables. In the meantime, here's what I know: focus on progressive overload, hit your protein target, and get adequate sleep. Those three factors drive 80% of results.",
+        content: `⚠️ Error: ${errMessage}\n\nMake sure ANTHROPIC_API_KEY is set in Vercel → Settings → Environment Variables, then Redeploy.`,
         timestamp: new Date(),
       };
       addChatMessage(errorMsg);
