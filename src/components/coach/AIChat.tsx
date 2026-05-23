@@ -17,7 +17,7 @@ const QUICK_QUESTIONS = [
 ];
 
 export function AIChat() {
-  const { userProfile, calorieData, macroData, chatHistory, addChatMessage } = useStore();
+  const { userProfile, calorieData, macroData, chatHistory, addChatMessage, updateChatMessage } = useStore();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -68,8 +68,9 @@ Goal calories: ${calorieData?.goalCalories} kcal. Protein: ${macroData?.protein}
       const decoder = new TextDecoder();
       let fullContent = '';
 
+      const aiMsgId = (Date.now() + 1).toString();
       const aiMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: aiMsgId,
         role: 'assistant',
         content: '',
         timestamp: new Date(),
@@ -89,9 +90,10 @@ Goal calories: ${calorieData?.goalCalories} kcal. Protein: ${macroData?.protein}
             try {
               const parsed = JSON.parse(data);
               const delta = parsed.choices?.[0]?.delta?.content || '';
-              fullContent += delta;
-              aiMsg.content = fullContent;
-              addChatMessage({ ...aiMsg });
+              if (delta) {
+                fullContent += delta;
+                updateChatMessage(aiMsgId, fullContent);
+              }
             } catch {}
           }
         }

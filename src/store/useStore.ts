@@ -20,6 +20,7 @@ interface AppState {
   setMealPlan: (plan: MealPlan) => void;
   addProgress: (entry: ProgressEntry) => void;
   addChatMessage: (message: ChatMessage) => void;
+  updateChatMessage: (id: string, content: string) => void;
   setIsOnboarded: (value: boolean) => void;
   setActiveDay: (day: number) => void;
   resetAll: () => void;
@@ -46,6 +47,12 @@ export const useStore = create<AppState>()(
       addProgress: (entry) => set((state) => ({ progress: [...state.progress, entry] })),
       addChatMessage: (message) =>
         set((state) => ({ chatHistory: [...state.chatHistory, message] })),
+      updateChatMessage: (id, content) =>
+        set((state) => ({
+          chatHistory: state.chatHistory.map((m) =>
+            m.id === id ? { ...m, content } : m
+          ),
+        })),
       setIsOnboarded: (value) => set({ isOnboarded: value }),
       setActiveDay: (day) => set({ activeDay: day }),
       resetAll: () =>
